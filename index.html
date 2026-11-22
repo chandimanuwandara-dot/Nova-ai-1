@@ -1,1 +1,204 @@
 
+<!DOCTYPE html>
+<html lang="si">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOVA AI</title>
+<style>
+body {
+  margin: 0;
+  background: #101426;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+header {
+  background: #202b50;
+  padding: 22px;
+  text-align: center;
+  font-size: 27px;
+  font-weight: bold;
+}
+main { padding: 18px; }
+#status {
+  text-align: center;
+  color: #72d8ff;
+  margin: 20px;
+}
+#chat {
+  height: 48vh;
+  overflow-y: auto;
+}
+.msg {
+  background: #263454;
+  padding: 13px;
+  margin: 10px 0;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+button {
+  background: #547cff;
+  color: white;
+  border: 0;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  margin: 5px;
+}
+input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 15px;
+  border-radius: 10px;
+  border: 0;
+  margin-top: 15px;
+  font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<header>✨ NOVA AI</header>
+
+<main>
+<div id="status">NOVA සූදානම්</div>
+
+<div id="chat">
+<div class="msg">
+ආයුබෝවන්! මම NOVA AI. මට කතා කරන්න.
+</div>
+</div>
+
+<button onclick="startWake()">🎤 NOVA අමතන්න</button>
+<button onclick="stopWake()">⏹ නවත්වන්න</button>
+
+<input id="question" placeholder="මෙතැන පණිවිඩය ලියන්න">
+<button onclick="sendText()">යවන්න</button>
+</main>
+
+<script>
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+let recognition;
+let listening = false;
+
+function speak(message) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  let speech = new SpeechSynthesisUtterance(message);
+  speech.lang = "si-LK";
+  speechSynthesis.speak(speech);
+}
+
+function addMessage(who, message) {
+  let item = document.createElement("div");
+  item.className = "msg";
+  item.textContent = who + ": " + message;
+  document.getElementById("chat").appendChild(item);
+  document.getElementById("chat").scrollTop =
+    document.getElementById("chat").scrollHeight;
+}
+
+function reply(message) {
+  addMessage("ඔයා", message);
+  let answer =
+    "ඔයාගේ ප්‍රශ්නය මට ලැබුණා. සැබෑ AI සේවාව තවම සම්බන්ධ කර නැහැ. ඉදිරියේදී ඒක එකතු කරමු.";
+  addMessage("NOVA", answer);
+  speak(answer);
+}
+
+function startWake() {
+  if (!SpeechRecognition) {
+    alert("මෙම Browser එකේ Voice පහසුකම සහාය නොදක්වයි.");
+    return;
+  }
+
+  listening = true;
+  document.getElementById("status").textContent =
+    "NOVA කියන වචනයට සවන් දෙමින්...";
+
+  listenForNova();
+}
+
+function listenForNova() {
+  if (!listening) return;
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "si-LK";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onresult = function(event) {
+    let words = event.results[0][0].transcript.toLowerCase();
+
+    if (words.includes("nova") ||
+        words.includes("නෝවා")) {
+      document.getElementById("status").textContent =
+        "NOVA අවදි වුණා! කියන්න.";
+
+      speak("ඔව්, කියන්න.");
+
+      setTimeout(function() {
+        if (listening) listenForCommand();
+      }, 1800);
+    }
+  };
+
+  recognition.onend = function() {
+    if (listening &&
+        document.getElementById("status").textContent.includes("සවන්")) {
+      setTimeout(listenForNova, 500);
+    }
+  };
+
+  recognition.onerror = function() {
+    document.getElementById("status").textContent =
+      "මයික්‍රෆෝනය පරීක්ෂා කරන්න.";
+  };
+
+  try { recognition.start(); } catch(e) {}
+}
+
+function listenForCommand() {
+  if (!listening) return;
+
+  let command = new SpeechRecognition();
+  command.lang = "si-LK";
+  command.continuous = false;
+
+  command.onresult = function(event) {
+    let words = event.results[0][0].transcript;
+    reply(words);
+    document.getElementById("status").textContent =
+      "NOVA සූදානම්";
+  };
+
+  command.onend = function() {
+    if (listening) setTimeout(listenForNova, 700);
+  };
+
+  try { command.start(); } catch(e) {}
+}
+
+function stopWake() {
+  listening = false;
+  if (recognition) recognition.abort();
+  speechSynthesis.cancel();
+  document.getElementById("status").textContent =
+    "NOVA නතර කර ඇත.";
+}
+
+function sendText() {
+  let box = document.getElementById("question");
+  let message = box.value.trim();
+  if (!message) return;
+  reply(message);
+  box.value = "";
+}
+</script>
+
+</body>
+</html>
+
